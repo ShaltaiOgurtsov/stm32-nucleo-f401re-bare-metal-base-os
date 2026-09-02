@@ -1,0 +1,6 @@
+/Users/admin/Code/_Embedded/C/EmbeddedBuilds/_CMake_EmbeddedTestProject/build/Debug/CMakeFiles/_CMake_EmbeddedTestProject.dir
+/Users/admin/Code/_Embedded/C/EmbeddedBuilds/_CMake_EmbeddedTestProject/build/Debug/CMakeFiles/edit_cache.dir
+/Users/admin/Code/_Embedded/C/EmbeddedBuilds/_CMake_EmbeddedTestProject/build/Debug/CMakeFiles/rebuild_cache.dir
+/Users/admin/Code/_Embedded/C/EmbeddedBuilds/_CMake_EmbeddedTestProject/build/Debug/cmake/stm32cubemx/CMakeFiles/STM32_Drivers.dir
+/Users/admin/Code/_Embedded/C/EmbeddedBuilds/_CMake_EmbeddedTestProject/build/Debug/cmake/stm32cubemx/CMakeFiles/edit_cache.dir
+/Users/admin/Code/_Embedded/C/EmbeddedBuilds/_CMake_EmbeddedTestProject/build/Debug/cmake/stm32cubemx/CMakeFiles/rebuild_cache.dir
