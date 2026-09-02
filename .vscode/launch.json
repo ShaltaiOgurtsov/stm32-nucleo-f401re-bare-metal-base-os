@@ -1,0 +1,26 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "cppdbg",
+            "request": "launch",
+            "name": "STM32: Flash & Debug (GDB)",
+            "cwd": "${workspaceFolder}",
+            "program": "${workspaceFolder}/build/Debug/_CMake_EmbeddedTestProject.elf",
+            "MIMode": "gdb",
+            "miDebuggerPath": "/Users/admin/Library/Application Support/stm32cube/bundles/gnu-tools-for-stm32/14.3.1+st.2/bin/arm-none-eabi-gdb",
+            "debugServerPath": "ST-LINK_gdbserver",
+            "debugServerArgs": "-p 61234 -l 1 -d -s -cp /Applications/STMicroelectronics/STM32Cube/STM32CubeProgrammer/STM32CubeProgrammer.app/Contents/MacOs/bin",
+            "serverLaunchTimeout": 20000,
+            "filterStderr": true,
+            "filterStdout": false,
+            "externalConsole": false,
+            "setupCommands": [
+                { "text": "target remote localhost:61234" },
+                { "text": "monitor reset init" },
+                { "text": "load" },
+                { "text": "monitor reset halt" }
+            ]
+        }
+    ]
+}
