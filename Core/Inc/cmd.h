@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <sys/_intsup.h>
 
-#define SMD_MAX_CLIENTS 10
+#define CMD_MAX_CLIENTS 10
 
 typedef int32_t (*cmd_func)(int32_t argc, const char** argv);
 
