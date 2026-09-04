@@ -27,7 +27,7 @@ struct ttys_cfg {
 
 // Core module interface functions 
 int32_t ttys_get_def_cfg(enum ttys_instance_id instance_id, struct ttys_cfg* cfg);
-int32_t ttys_start(enum ttys_instance_id instance_id, struct ttys_cfg* cfg);
+int32_t ttys_init(enum ttys_instance_id instance_id, struct ttys_cfg* cfg);
 int32_t ttys_start(enum ttys_instance_id instance_id);
 
 //Other APIs

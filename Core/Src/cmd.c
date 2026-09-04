@@ -7,8 +7,10 @@
 #include <strings.h>
 #include <sys/_intsup.h>
 #include <sys/_types.h>
+#include <sys/stat.h>
 
 #include "cmd.h"
+#include "console.h"
 #include "log.h"
 #include "module.h"
 
@@ -260,7 +262,7 @@ int32_t cmd_parse_args(int32_t argc, const char** argc, const char *fmt,
     char* endptr;
     bool opt_args = false;
 
-    while (*ftm) {
+    while (*fmt) {
         // Process insufficient arguments
         if(*ftm == '['){
             opt_args = true;
@@ -282,6 +284,76 @@ int32_t cmd_parse_args(int32_t argc, const char** argc, const char *fmt,
 
         // Error conditions that should not occur but we check for them 
         // for safety
-        if ()
+        if (*argv == NULL || **argv == '\0'){
+            printf("Invalid empty arguments\n");
+            return 43;
+        }
+
+        switch (*fmt) {
+            case 'i':
+                arg_vals->val.i = strtol(*argv, &endptr, 0);
+                if (*endptr){
+                    printf("Argument %s is not a valid integer\n", *argv);
+                    return 43;
+                }
+                break;
+            case 'u':
+                arg_vals->val.u = strtoul(*argv, &endptr, 0);
+                if (*endptr){
+                    printf("Argument '%s' not a valid unsigned integer\n", *argv);
+                    return 43;
+                }
+                break;
+            case 'p':
+                arg_vals->val.p = (void*)strtoul(*argv, &endptr, 16);
+                if (*endptr) {
+                    printf("Argument '%s' not a valid pointer\n", *argv);
+                    return MOD_ERR_ARG;
+                }
+                break;
+            case 's':
+                arg_vals->val.s = *argv;
+                break;
+            default:
+                printf("Bad argument format '%c'\n", *fmt);
+                return 43;
+        }
+
+        arg_vals->type = *fmt;
+        arg_vals++;
+        arg_cnt++;
+        argv++;
+        fmt++;
+        opt_args = false;
     }
+    if (arg_cnt < argc){
+        printf("Too many arguments\n");
+        return 43;
+    } 
+    return arg_cnt;
+}
+
+//Private (static) functions
+
+// Convert integer log level to string
+static const char* log_level_str(int32_t level){
+    if (level <ARRAY_SIZE(log_level_names)){
+        return log_level_names;
+    }
+    return "INVALID";
+}
+
+// Convert lof level string to int
+static int32_t log_level_int(const char* level_name){
+    int32_t level;
+    int32_t rc = -1; // return value
+
+    for (level = 0; level < ARRAY_SIZE(log_level_names); level++){
+        if (strcasecmp(level_name, log_level_names[level]) == 0){
+            rc = level;
+            break;
+        }
+    }
+
+    return  rc;
 }
