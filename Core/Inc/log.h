@@ -27,4 +27,18 @@ void log_toggle_active(void);
 bool log_is_active(void);
 void log_printf(const char* ftm, ...);
 
-#endif
+#define log_error(ftm, ...) do {if (_log_active && log_level >= LOG_ERROR) \ 
+            log_printf("ERR  " fmt, ##__VA_ARGS__); } while(0)
+#define log_warning(fmt, ...) do { if (_log_active && log_level >= LOG_WARNING) \
+            log_printf("WARN " fmt, ##__VA_ARGS__); } while (0)
+#define log_info(fmt, ...) do { if (_log_active && log_level >= LOG_INFO) \
+            log_printf("INFO " fmt, ##__VA_ARGS__); } while (0)
+#define log_debug(fmt, ...) do { if (_log_active && log_level >= LOG_DEBUG) \
+            log_printf("DBG  " fmt, ##__VA_ARGS__); } while (0)
+#define log_trace(fmt, ...) do { if (_log_active && log_level >= LOG_TRACE) \
+            log_printf("TRC  " fmt, ##__VA_ARGS__); } while (0)
+
+// Following variable is global to allow efficient access by macros
+extern bool _log_active;
+
+#endif 

@@ -448,3 +448,13 @@ int _read(int file, char* ptr, int len){
 
     return rc;
 }
+
+static int32_t cmd_ttys_status(int32_t argc, const char** argv) {
+    printf("TTYS status\n");
+    return 0;
+}
+
+static int32_t cmd_ttys_test(int32_t argc, const char** argv) {
+    printf("TTYS test\n");
+    return 0;
+}

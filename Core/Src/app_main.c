@@ -12,6 +12,9 @@
 #include "log.h"
 #include "module.h"
 #include "app_main.h"
+#include "stm32f4xx_ll_utils.h"
+#include "stm32f4xx_ll_usart.h"
+#include "stm32f4xx_ll_gpio.h"
 
 enum main_u16_pms{
     CNT_INIT_ERR,
@@ -51,6 +54,16 @@ static struct cmd_client_info cmd_info = {
     .u16_pm_names = cnts_u16_names,
 };
 
+void uart_clear_and_home(USART_TypeDef *USARTx){
+    const char *ansi_cls = "\033[2J\033[H";
+    while (*ansi_cls) {
+        while (LL_USART_IsActiveFlag_TXE(USARTx)) {
+            LL_USART_TransmitData8(USARTx, (uint8_t)*ansi_cls++);
+        }
+    }
+}
+
+
 
 void app_main(void){
     int32_t result;
@@ -59,6 +72,9 @@ void app_main(void){
 
     setvbuf(stdout, NULL, _IONBF, 0);
     printf("\nInit: Init modules\n");
+
+    
+    uart_clear_and_home(TTYS_INSTANCE_UART2);
 
     // INITIALIZING MODULES
 
@@ -78,7 +94,7 @@ void app_main(void){
     if (result < 0){
         INC_SAT_U16(cnts_u16[CNT_INIT_ERR]);
     } else {
-        result = ttys_init(TTYS_INSTANCE_UART2, &ttys_cfg);
+        result = ttys_init(TTYS_INSTANCE_UART6, &ttys_cfg);
         if (result < 0){
             INC_SAT_U16(cnts_u16[CNT_INIT_ERR]);
         }
@@ -101,6 +117,11 @@ void app_main(void){
         }
     }
 
+    LL_USART_TransmitData8(USART2, 'B');
+    LL_USART_TransmitData8(USART2, 'U');
+    LL_USART_TransmitData8(USART2, 'S');
+    LL_USART_TransmitData8(USART2, 'K');
+    LL_USART_TransmitData8(USART2, 'A');
     // STARTING MODULES
 
     printf("Init: Start modules\n");
@@ -129,8 +150,19 @@ void app_main(void){
         if (result < 0){
             INC_SAT_U16(cnts_u16[CNT_RUN_ERR]);
         }
+
+        while (!LL_USART_IsActiveFlag_TXE(USART2));
+        LL_USART_TransmitData8(USART2, 'B');
+
+        while (!LL_USART_IsActiveFlag_TXE(USART2));
+        LL_USART_TransmitData8(USART2, 'C');
+
+
+        LL_mDelay(1000);
     }
 }
+
+
 
 
 static int32_t cmd_main_status(int32_t argc, const char** argv){

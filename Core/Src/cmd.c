@@ -32,6 +32,12 @@ static const char* log_level_names[] = {
     LOG_LEVEL_NAMES_CSV
 };
 
+//Init function for cmd
+int32_t cmd_init(struct cmd_cfg* cfg){
+    memset(client_info, 0, sizeof(client_info));
+    return 0;
+}
+
 // Public (global) functions
 
 int32_t cmd_register(const struct cmd_client_info* _client_info)
@@ -358,3 +364,4 @@ static int32_t log_level_int(const char* level_name){
 
     return  rc;
 }
+

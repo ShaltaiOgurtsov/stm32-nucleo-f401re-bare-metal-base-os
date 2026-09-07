@@ -19,6 +19,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "app_main.h"
+#include <stdio.h>
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -99,7 +100,7 @@ int main(void)
   MX_USART6_UART_Init();
   /* USER CODE BEGIN 2 */
 
-  
+
   app_main();
   /* USER CODE END 2 */
   /* Infinite loop */
@@ -107,7 +108,8 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
-
+      LL_USART_TransmitData8(USART2, 'A');
+      LL_mDelay(1000);
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
