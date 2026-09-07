@@ -81,7 +81,7 @@ int main(void)
   NVIC_SetPriorityGrouping(NVIC_PRIORITYGROUP_0);
 
   /* USER CODE BEGIN Init */
-
+  
   /* USER CODE END Init */
 
   /* Configure the system clock */
