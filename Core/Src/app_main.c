@@ -8,6 +8,7 @@
 
 #include "cmd.h"
 #include "console.h"
+#include "stm32f410rx.h"
 #include "ttys.h"
 #include "log.h"
 #include "module.h"
@@ -70,11 +71,14 @@ void app_main(void){
     struct console_cfg console_cfg;
     struct ttys_cfg ttys_cfg;
 
+    // uart_clear_and_home(USART2);
+
+
     setvbuf(stdout, NULL, _IONBF, 0);
+    printf("\033[2J\033[H");
+
     printf("\nInit: Init modules\n");
 
-    
-    uart_clear_and_home(TTYS_INSTANCE_UART2);
 
     // INITIALIZING MODULES
 
@@ -90,6 +94,7 @@ void app_main(void){
     }
 
 
+
     result = ttys_get_def_cfg(TTYS_INSTANCE_UART6, &ttys_cfg);
     if (result < 0){
         INC_SAT_U16(cnts_u16[CNT_INIT_ERR]);
@@ -99,6 +104,7 @@ void app_main(void){
             INC_SAT_U16(cnts_u16[CNT_INIT_ERR]);
         }
     }
+
 
 
     result = cmd_init(NULL);
@@ -117,14 +123,9 @@ void app_main(void){
         }
     }
 
-    LL_USART_TransmitData8(USART2, 'B');
-    LL_USART_TransmitData8(USART2, 'U');
-    LL_USART_TransmitData8(USART2, 'S');
-    LL_USART_TransmitData8(USART2, 'K');
-    LL_USART_TransmitData8(USART2, 'A');
     // STARTING MODULES
 
-    printf("Init: Start modules\n");
+    printf("Init: start modules\n");
 
     result = ttys_start(TTYS_INSTANCE_UART2);
     if (result < 0){
@@ -142,6 +143,8 @@ void app_main(void){
         INC_SAT_U16(cnts_u16[CNT_START_ERR]);
     }
 
+    
+
     printf("Init: Enter super loop\n");
 
     while (1) {
@@ -150,15 +153,6 @@ void app_main(void){
         if (result < 0){
             INC_SAT_U16(cnts_u16[CNT_RUN_ERR]);
         }
-
-        while (!LL_USART_IsActiveFlag_TXE(USART2));
-        LL_USART_TransmitData8(USART2, 'B');
-
-        while (!LL_USART_IsActiveFlag_TXE(USART2));
-        LL_USART_TransmitData8(USART2, 'C');
-
-
-        LL_mDelay(1000);
     }
 }
 

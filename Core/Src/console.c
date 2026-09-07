@@ -53,18 +53,20 @@ int32_t console_init(struct console_cfg* cfg){
     return 0;
 }
 
-int32_t console_run(void){
-    char c;
 
-    if (!state.first_run_done){
+
+int32_t console_run(void)
+{
+    char c;
+    if (!state.first_run_done) {
         state.first_run_done = true;
         printf("%s", PROMPT);
     }
-
-    // Entering characters using ttys interface
+            
     while (ttys_getc(state.cfg.ttys_instance_id, &c)) {
-        // Handle processing completed command on lineend or carrige return
-        if (c == '/n' || c == '/r'){
+
+        // Handle processing completed command line.
+        if (c == '\r') {
             state.cmd_bfr[state.num_cmd_bfr_chars] = '\0';
             printf("\n");
             cmd_execute(state.cmd_bfr);
@@ -73,9 +75,10 @@ int32_t console_run(void){
             continue;
         }
 
-        // Handle backspace/delete
-        if (c == 'b' || c == '\x7f') {
-            if (state.num_cmd_bfr_chars > 0){
+        // Handle backspace/delete.
+        if (c == '\b' || c == '\x7f') {
+            if (state.num_cmd_bfr_chars > 0) {
+                // Overwrite last character with a blank.
                 printf("\b \b");
                 state.num_cmd_bfr_chars--;
             }
@@ -83,25 +86,26 @@ int32_t console_run(void){
             continue;
         }
 
-        // Handle logging on/off toggle
+        // Handle logging on/off toggle.
         if (c == LOG_TOGGLE_CHAR) {
             log_toggle_active();
-            printf("\n <Logging %s>\n", log_is_active() ? "on" : "off");
+            printf("\n<Logging %s>\n", log_is_active() ? "on" : "off");
             continue;
         }
-        
-        // Echo the character back
-        if (isprint(c)){
-            if (state.num_cmd_bfr_chars < (CONSOLE_CMD_BUFFER_SIZE-1)){
+
+        // Echo the character back.
+        if (isprint(c)) {
+            if (state.num_cmd_bfr_chars < (CONSOLE_CMD_BUFFER_SIZE-1)) {
                 state.cmd_bfr[state.num_cmd_bfr_chars++] = c;
                 printf("%c", c);
             } else {
-                // Ring the alarm bell
+                // No space in buffer for the character, so ring the bell.
                 printf("\a");
             }
             continue;
         }
+            
     }
     return 0;
-}
+}            
 

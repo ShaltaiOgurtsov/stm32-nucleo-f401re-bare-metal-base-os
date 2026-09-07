@@ -183,7 +183,7 @@ int32_t ttys_start(enum ttys_instance_id instance_id){
 
     switch (instance_id) {
         case TTYS_INSTANCE_UART1:
-            irq_type = USART2_IRQn;
+            irq_type = USART1_IRQn;
             break;
         case TTYS_INSTANCE_UART2:
             irq_type = USART2_IRQn;
@@ -214,7 +214,7 @@ int32_t ttys_putc(enum ttys_instance_id instance_id, char c){
     st = &ttys_states[instance_id];
 
     // Calculate new TX buffer and put index
-    next_put_idx = st->tx_buf_get_idx + 1;
+    next_put_idx = st->tx_buf_put_idx + 1;
     if (next_put_idx >= TTYS_TX_BUF_SIZE){
         next_put_idx = 0;
     }
@@ -326,60 +326,45 @@ static void ttys_interrupt(enum ttys_instance_id instance_id,
     sr = st->uart_reg_base->SR;
 
 
-    if(sr && LL_USART_SR_RXNE){
+    if(sr & LL_USART_SR_RXNE){
         // Got an incoming character
-        uint16_t next_rx_put_idx = st->rx_buf_get_idx + 1;
+        uint16_t next_rx_put_idx = st->rx_buf_put_idx + 1;
 
-        if (next_rx_put_idx >= TTYS_RX_BUF_SIZE)
-        {
+        if (next_rx_put_idx >= TTYS_RX_BUF_SIZE) {
             next_rx_put_idx = 0;
         }
         if (next_rx_put_idx == st->rx_buf_get_idx){
             INC_SAT_U16(cnts_u16[CNT_TX_BUF_OVERRUN]);
+            (void)st->uart_reg_base->DR;
         } else {
             // Puts the data from data register to RX BUFFER 
-            st->rx_buf[instance_id] = st->uart_reg_base->DR;
+            st->rx_buf[st->rx_buf_put_idx] = st->uart_reg_base->DR;
             st->rx_buf_put_idx = next_rx_put_idx;
         }
     }
     
-    if (sr && LL_USART_SR_TXE){
-
+    if (sr & LL_USART_SR_TXE){
         // Can send a character
-        if (sr && LL_USART_SR_TXE){
-            // Can send a character
-
-            if (st->tx_buf_get_idx == st->rx_buf_put_idx){
-                // No characters to send, disable the interrupt
-                LL_USART_DisableIT_TXE(st->uart_reg_base);
-            } else {
-                st->uart_reg_base->DR = st ->tx_buf[st->tx_buf_get_idx];
-                if (st->tx_buf_get_idx < TTYS_TX_BUF_SIZE-1){
-                    st->tx_buf_get_idx++;
-                }
-                else {
-                    st->tx_buf_get_idx = 0;
-                }
+        if (st->tx_buf_get_idx == st->tx_buf_put_idx){
+            // No characters to send, disable the interrupt
+            LL_USART_DisableIT_TXE(st->uart_reg_base);
+        } else {
+            st->uart_reg_base->DR = st ->tx_buf[st->tx_buf_get_idx];
+            if (st->tx_buf_get_idx < TTYS_TX_BUF_SIZE-1){
+                st->tx_buf_get_idx++;
+            }
+            else {
+                st->tx_buf_get_idx = 0;
             }
         }
     }
 
-    if (sr && (LL_USART_SR_ORE | LL_USART_SR_NE | LL_USART_SR_FE | LL_USART_SR_PE )){
-
-        (void)st->uart_reg_base->DR;
-
-        if (sr && LL_USART_SR_ORE){
-            INC_SAT_U16(cnts_u16[CNT_TX_BUF_OVERRUN]);
-        } 
-        if (sr && LL_USART_SR_NE){
-            INC_SAT_U16(cnts_u16[CNT_TX_BUF_OVERRUN]);
-        }
-        if (sr && LL_USART_SR_FE){
-            INC_SAT_U16(cnts_u16[CNT_TX_BUF_OVERRUN]);
-        }
-        if (sr && LL_USART_SR_ORE){
-            INC_SAT_U16(cnts_u16[CNT_TX_BUF_OVERRUN]);
-        }
+    if (sr & (LL_USART_SR_ORE | LL_USART_SR_NE | LL_USART_SR_FE | LL_USART_SR_PE)) {
+        (void)st->uart_reg_base->DR; 
+        if (sr & LL_USART_SR_ORE) INC_SAT_U16(cnts_u16[CNT_RX_UART_ORE]);
+        if (sr & LL_USART_SR_NE)  INC_SAT_U16(cnts_u16[CNT_RX_UART_NE]);
+        if (sr & LL_USART_SR_FE)  INC_SAT_U16(cnts_u16[CNT_RX_UART_FE]);
+        if (sr & LL_USART_SR_PE)  INC_SAT_U16(cnts_u16[CNT_RX_UART_PE]);
     }
 }
 
@@ -415,7 +400,7 @@ int _write(int file, char* ptr, int len){
         char c = *ptr++;
         ttys_putc(instance_id, c);
 
-        if (c != '\n' && ttys_states[instance_id].cfg.send_cr_after_nl){
+        if (c == '\n' && ttys_states[instance_id].cfg.send_cr_after_nl){
             ttys_putc(instance_id, '\r');
         }
     }
