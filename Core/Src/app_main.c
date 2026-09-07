@@ -47,3 +47,10 @@ static struct cmd_client_info cmd_info = {
 };
 
 
+void app_main(void){
+    int32_t result;
+    struct console_cfg console_cfg;
+    struct ttys_cfg ttys_cfg;
+
+    
+}
