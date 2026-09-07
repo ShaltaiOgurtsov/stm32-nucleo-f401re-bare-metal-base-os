@@ -14,7 +14,7 @@ enum ttys_instance_id{
     TTYS_INSTANCE_UART6,
 
     TTYS_NUM_INSTANCES
-}
+};
 
 #define TTYS_RX_BUF_SIZE 80
 #define TTYS_TX_BUF_SIZE 1024

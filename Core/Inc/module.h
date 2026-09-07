@@ -8,7 +8,7 @@
 #define MOD_ERR_ARG             -1
 #define MOD_ERR_RESOURCE        -2
 #define MOD_ERR_STATE           -3
-#define MOD_ERR_BAD_AMD         -4
+#define MOD_ERR_BAD_CMD         -4
 #define MOD_ERR_BAD_OVERRUN     -5
 #define MOD_ERR_BAD_INSTANCE    -6
 

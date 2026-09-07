@@ -5,7 +5,7 @@
 
 #include "ttys.h"
 
-stuct console_cfg{
+struct console_cfg{
     enum ttys_instance_id ttys_instance_id;
 };
 

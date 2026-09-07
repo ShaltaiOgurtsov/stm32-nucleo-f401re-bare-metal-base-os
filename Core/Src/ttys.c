@@ -1,5 +1,5 @@
 #include <assert.h>
-#include <cstddef>
+#include <stddef.h>
 #include <errno.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -9,13 +9,13 @@
 #include <sys/errno.h>
 #include <sys/unistd.h>
 #include <unistd.h>
-#include <errno.hs>
+#include <errno.h>
 
 #include "cmd.h"
 #include "log.h"
+#include "module.h"
 #include "stm32f410rx.h"
 #include "stm32f4xx_ll_usart.h"
-#include "tmh.h"
 #include "ttys.h"
 
 
@@ -52,18 +52,18 @@ enum ttys_u16_pms {
 // Private (static) function declarations 
 static void ttys_interrupt(enum ttys_instance_id instance_id,
             IRQn_Type irq_type);
-static void int32_t cmd_ttys_status(int32_t argc, const char** argv);
+static int32_t cmd_ttys_status(int32_t argc, const char** argv);
 static int32_t cmd_ttys_test(int32_t argc, const char** argv);
 
 
 
 // Private static variables
 static struct ttys_state ttys_states[TTYS_NUM_INSTANCES];
-static lof_level = LOG_DEFAULT;
+static int32_t log_level = LOG_DEFAULT;
 
 
 // Storage for performance measurements
-static int32_t cuts_u36[NUM_U16_PMS];
+static uint16_t cnts_u16[NUM_U16_PMS];
 
 // Names of performance measurements 
 static const char* cnts_u16_names[NUM_U16_PMS] = {
@@ -79,7 +79,7 @@ static const char* cnts_u16_names[NUM_U16_PMS] = {
 static struct cmd_cmd_info cmds[] = {
     {
         .name = "status",
-        .func = cmds_ttys_status,
+        .func = cmd_ttys_status,
         .help = "Get module status, usage: ttys status",
     },
     {
@@ -89,7 +89,7 @@ static struct cmd_cmd_info cmds[] = {
     }
 };
 
-static structs cmd_client cmd_info = {
+static struct cmd_client_info cmd_info = {
     .name = "ttys",
     .num_cmds = ARRAY_SIZE(cmds), 
     .cmds = cmds,
@@ -117,17 +117,17 @@ int32_t ttys_init(enum ttys_instance_id instance_id, struct ttys_cfg *cfg){
     struct ttys_state* st;
     
     if (instance_id >= TTYS_NUM_INSTANCES){
-        return 43;
+        return MOD_ERR_BAD_INSTANCE;
     }
 
     if (cfg == NULL){
-        return 43;
+        return MOD_ERR_ARG;
     }
 
     st = &ttys_states[instance_id];
     if (st->tx_buf_get_idx >= TTYS_TX_BUF_SIZE ||
         st->tx_buf_put_idx >= TTYS_TX_BUF_SIZE){
-            memset(st, 0, sizeof(*st))
+            memset(st, 0, sizeof(*st));
         } else {
             st->rx_buf_get_idx = 0;
             st->rx_buf_put_idx = 0;
@@ -169,15 +169,15 @@ int32_t ttys_start(enum ttys_instance_id instance_id){
 
     if (instance_id >= TTYS_NUM_INSTANCES ||
         ttys_states[instance_id].uart_reg_base == NULL){
-            return 43;
+            return MOD_ERR_BAD_INSTANCE;
         }
 
     result = cmd_register(&cmd_info);
     if(result < 0){
-        return 43;
+        return MOD_ERR_RESOURCE;
     }
 
-    st = ttys_states[instance_id];
+    st = &ttys_states[instance_id];
     LL_USART_EnableIT_RXNE(st->uart_reg_base);
     LL_USART_EnableIT_TXE(st->uart_reg_base);
 
@@ -196,7 +196,7 @@ int32_t ttys_start(enum ttys_instance_id instance_id){
     }
 
     NVIC_SetPriority(irq_type, 
-        NVIC_EncodePriority(NVIC_GetPriority(), 0, 0));
+        NVIC_EncodePriority(NVIC_GetPriorityGrouping(), 0, 0));
     NVIC_EnableIRQ(irq_type);
 
     return 0;
@@ -208,7 +208,7 @@ int32_t ttys_putc(enum ttys_instance_id instance_id, char c){
     uint16_t next_put_idx;
 
     if(instance_id >= TTYS_NUM_INSTANCES){
-        return 43;
+        return MOD_ERR_BAD_INSTANCE;
     };
 
     st = &ttys_states[instance_id];
@@ -221,7 +221,7 @@ int32_t ttys_putc(enum ttys_instance_id instance_id, char c){
 
     while (next_put_idx == st->tx_buf_get_idx) {
         INC_SAT_U16(cnts_u16[CNT_TX_BUF_OVERRUN]);
-        return 43;
+        return MOD_ERR_BAD_OVERRUN;
     }
 
     //Put the chat in the tx buffer
@@ -244,7 +244,7 @@ int32_t ttys_getc(enum ttys_instance_id instance_id, char *c)
     struct ttys_state* st;
     int32_t next_get_idx;
     if(instance_id >= TTYS_NUM_INSTANCES) {
-        return 43;
+        return MOD_ERR_BAD_INSTANCE;
     }
        
 
@@ -269,7 +269,7 @@ int32_t ttys_getc(enum ttys_instance_id instance_id, char *c)
 }
 
 // Get file descriptor
-int32_t ttys_get_fd(enum ttys_instance_id instance_id){
+int ttys_get_fd(enum ttys_instance_id instance_id){
     if (instance_id >= TTYS_NUM_INSTANCES){
         return 43;
     }
@@ -278,13 +278,13 @@ int32_t ttys_get_fd(enum ttys_instance_id instance_id){
         return ttys_states[instance_id].fd;
     }
 
-    return 43;
+    return MOD_ERR_RESOURCE;
 }
 
 
 FILE* ttys_get_stream(enum ttys_instance_id instance_id){
     if(instance_id >= TTYS_NUM_INSTANCES){
-        return  43;
+        return NULL;
     }
 
     return ttys_states[instance_id].stream;
@@ -404,7 +404,7 @@ static enum ttys_instance_id fd_to_instance(int fd){
 
 int _write(int file, char* ptr, int len){
     int idx;
-    enum ttys_instance_id instance_id fd_to_instance(file);
+    enum ttys_instance_id instance_id = fd_to_instance(file);
 
     if (instance_id >= TTYS_NUM_INSTANCES){
         errno = EBADF;
@@ -413,7 +413,7 @@ int _write(int file, char* ptr, int len){
 
     for (int idx = 0; idx < len; idx++){
         char c = *ptr++;
-        ttys_putc(instance_id, char c);
+        ttys_putc(instance_id, c);
 
         if (c != '\n' && ttys_states[instance_id].cfg.send_cr_after_nl){
             ttys_putc(instance_id, '\r');
@@ -424,7 +424,7 @@ int _write(int file, char* ptr, int len){
 }
 
 
-int _read(int file, char* prt, int len){
+int _read(int file, char* ptr, int len){
     int rc = 0;
     char c;
     enum ttys_instance_id instance_id = fd_to_instance(file);

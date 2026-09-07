@@ -11,7 +11,6 @@
 enum log_level {
     LOG_OFF = 0,
     LOG_ERROR,
-    LOG_ERROR,
     LOG_INFO,
     LOG_DEBUG,
     LOG_TRACE,

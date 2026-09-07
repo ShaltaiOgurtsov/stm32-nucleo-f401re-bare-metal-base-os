@@ -21,7 +21,7 @@
 
 struct console_state {
     struct console_cfg cfg;                     // Instance config
-    chat cmd_bfr[CONSOLE_CMD_BUFFER_SIZE];      // Cmd buffer
+    char cmd_bfr[CONSOLE_CMD_BUFFER_SIZE];      // Cmd buffer
     uint32_t num_cmd_bfr_chars;                 // Number of characters in the buffer
     bool first_run_done;
 };
@@ -35,7 +35,7 @@ static int32_t log_level = LOG_DEFAULT;
 
 int32_t console_get_def_cfg(struct console_cfg *cfg){
     if (cfg == NULL){
-        return MDD_ERR_ARG;
+        return MOD_ERR_ARG;
     }
 
     memset(cfg, 0, sizeof(*cfg));
@@ -45,7 +45,7 @@ int32_t console_get_def_cfg(struct console_cfg *cfg){
 
 int32_t console_init(struct console_cfg* cfg){
     if(cfg == NULL){
-        return MDD_ERR_ARG;
+        return MOD_ERR_ARG;
     }
 
     memset(&state, 0, sizeof(state));
@@ -58,7 +58,7 @@ int32_t console_run(void){
 
     if (!state.first_run_done){
         state.first_run_done = true;
-        printf(%s, PROMPT);
+        printf("%s", PROMPT);
     }
 
     // Entering characters using ttys interface

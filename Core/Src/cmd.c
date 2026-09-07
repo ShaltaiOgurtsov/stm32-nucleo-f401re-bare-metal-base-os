@@ -14,6 +14,7 @@
 #include "log.h"
 #include "module.h"
 
+
 #define MAX_CMD_TOKENS 10
 
 // Static function declarations
@@ -37,14 +38,14 @@ int32_t cmd_register(const struct cmd_client_info* _client_info)
 {
     int32_t idx;
 
-    for (idx = 0; i < CMD_MAX_CLIENTS; idx++){
+    for (idx = 0; idx < CMD_MAX_CLIENTS; idx++){
         if (client_info[idx] == NULL || 
             strcasecmp(_client_info[idx].name, _client_info->name) == 0){
                 client_info[idx] = _client_info;
                 return 0;
         }
     }
-    return 43;
+    return MOD_ERR_RESOURCE;
 }
 
 int32_t cmd_execute(char *bfr){
@@ -60,7 +61,7 @@ int32_t cmd_execute(char *bfr){
     while (1) {
         // Find start of token
         while (*p && isspace((unsigned char)*p)) {
-            p++
+            p++;
         }
         if (*p == '\0'){
             // Found end of a like
@@ -68,7 +69,7 @@ int32_t cmd_execute(char *bfr){
         } else {
             if (num_tokens >= MAX_CMD_TOKENS){
                 printf("Too many tokens\n");
-                return 43;
+                return MOD_ERR_BAD_CMD;
             }
             // Record pointer to token and find its end
             tokens[num_tokens++] = p;
@@ -94,7 +95,7 @@ int32_t cmd_execute(char *bfr){
     if (strcmp("*", tokens[0]) == 0){
         if (num_tokens < 2){
             printf("Wildcard missing command");
-            return 432;
+            return MOD_ERR_BAD_CMD;
         }
         if (strcasecmp(tokens[1], "log") == 0){
             int32_t log_level = 0;
@@ -102,18 +103,18 @@ int32_t cmd_execute(char *bfr){
                 log_level = log_level_int(tokens[2]);
                 if (log_level < 0){
                     printf("Invalid log level: %s\n", tokens[2]);
-                    return 43;
+                    return MOD_ERR_ARG;
                 }
             } else if(num_tokens > 3){
                 printf("Invalid arguments\n");
-                return 43;
+                return MOD_ERR_ARG;
             }
             for (idx = 0; 
                 idx < CMD_MAX_CLIENTS && client_info[idx] != NULL; idx++){
                 ci = client_info[idx];
                 if (ci->log_level_ptr != NULL){
                     if (num_tokens == 3){
-                        *ci->log_levels_ptr = log_level;
+                        *ci->log_level_ptr = log_level;
                     } else {
                         printf("Log level for %s = %s\n", ci->name,
                         log_level_str(*ci->log_level_ptr));
@@ -158,7 +159,7 @@ int32_t cmd_execute(char *bfr){
 
     //Find and execute the command
     for(idx = 0; 
-        i < CMD_MAX_CLIENTS && client_info[idx] != NULL
+        idx < CMD_MAX_CLIENTS && client_info[idx] != NULL;
         idx++){
         ci = client_info[idx];
         if (strcasecmp(tokens[0], ci->name) != 0)
@@ -207,9 +208,9 @@ int32_t cmd_execute(char *bfr){
 
                     if (log_level < 0){
                         printf("Invalid log level: %s\n", tokens[2]);
-                        return 43;
+                        return MOD_ERR_ARG;
                     }
-                    *ci->log_level_prt = log_level;
+                    *ci->log_level_ptr = log_level;
                 }
             }
             return 0;
@@ -246,16 +247,16 @@ int32_t cmd_execute(char *bfr){
             }
         }
         printf("No such command (%s %s)\n", tokens[0], tokens[1]);
-        return 43;
+        return MOD_ERR_BAD_CMD;
     }
 
     printf("No such command (%s)\n", tokens[0]);
-    return 43;
+    return MOD_ERR_BAD_CMD;
 }
 
 
 // Parse arguments function 
-int32_t cmd_parse_args(int32_t argc, const char** argc, const char *fmt, 
+int32_t cmd_parse_args(int32_t argc, const char** argv, const char *fmt, 
     struct cmd_arg_val* arg_vals)
 {
     int32_t arg_cnt = 0;
@@ -264,7 +265,7 @@ int32_t cmd_parse_args(int32_t argc, const char** argc, const char *fmt,
 
     while (*fmt) {
         // Process insufficient arguments
-        if(*ftm == '['){
+        if(*fmt == '['){
             opt_args = true;
             fmt++;
             continue;
@@ -279,14 +280,14 @@ int32_t cmd_parse_args(int32_t argc, const char** argc, const char *fmt,
                 return arg_cnt;
             }
             printf("Insufficient arguments\n");
-            return 43;
+            return MOD_ERR_BAD_CMD;
         }
 
         // Error conditions that should not occur but we check for them 
         // for safety
         if (*argv == NULL || **argv == '\0'){
             printf("Invalid empty arguments\n");
-            return 43;
+            return MOD_ERR_BAD_CMD;
         }
 
         switch (*fmt) {
@@ -294,14 +295,14 @@ int32_t cmd_parse_args(int32_t argc, const char** argc, const char *fmt,
                 arg_vals->val.i = strtol(*argv, &endptr, 0);
                 if (*endptr){
                     printf("Argument %s is not a valid integer\n", *argv);
-                    return 43;
+                    return MOD_ERR_ARG;
                 }
                 break;
             case 'u':
                 arg_vals->val.u = strtoul(*argv, &endptr, 0);
                 if (*endptr){
                     printf("Argument '%s' not a valid unsigned integer\n", *argv);
-                    return 43;
+                    return MOD_ERR_ARG;
                 }
                 break;
             case 'p':
@@ -316,7 +317,7 @@ int32_t cmd_parse_args(int32_t argc, const char** argc, const char *fmt,
                 break;
             default:
                 printf("Bad argument format '%c'\n", *fmt);
-                return 43;
+                return MOD_ERR_ARG;
         }
 
         arg_vals->type = *fmt;
@@ -328,7 +329,7 @@ int32_t cmd_parse_args(int32_t argc, const char** argc, const char *fmt,
     }
     if (arg_cnt < argc){
         printf("Too many arguments\n");
-        return 43;
+        return MOD_ERR_BAD_CMD;
     } 
     return arg_cnt;
 }
@@ -338,7 +339,7 @@ int32_t cmd_parse_args(int32_t argc, const char** argc, const char *fmt,
 // Convert integer log level to string
 static const char* log_level_str(int32_t level){
     if (level <ARRAY_SIZE(log_level_names)){
-        return log_level_names;
+        return log_level_names[level];
     }
     return "INVALID";
 }
