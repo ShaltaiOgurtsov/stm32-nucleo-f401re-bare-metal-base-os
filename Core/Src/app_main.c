@@ -142,7 +142,6 @@ void app_main(void){
     if (result < 0){
         INC_SAT_U16(cnts_u16[CNT_START_ERR]);
     }
-
     
 
     printf("Init: Enter super loop\n");
