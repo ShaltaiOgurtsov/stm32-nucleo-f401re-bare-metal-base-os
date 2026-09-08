@@ -8,6 +8,7 @@
 
 #include "cmd.h"
 #include "console.h"
+#include "dio.h"
 #include "stm32f410rx.h"
 #include "ttys.h"
 #include "log.h"
@@ -16,6 +17,8 @@
 #include "stm32f4xx_ll_utils.h"
 #include "stm32f4xx_ll_usart.h"
 #include "stm32f4xx_ll_gpio.h"
+#include "dio.h"
+#include "blinky.h"
 
 enum main_u16_pms{
     CNT_INIT_ERR,
@@ -55,6 +58,38 @@ static struct cmd_client_info cmd_info = {
     .u16_pm_names = cnts_u16_names,
 };
 
+enum din_index {
+    DOUT_LED_2,
+
+    DOUT_NUM
+};
+
+
+static struct dio_in_info d_inputs[DIN_NUM] = {
+
+};
+
+
+static struct dio_out_info d_outputs[DOUT_NUM] = {
+    {
+        // LED 2
+        .name = "LED_2",
+        .port = DIO_PORT_A,
+        .pin = DIO_PIN_5,
+        .pull = DIO_PULL_NO,
+        .init_value = 0,
+        .speed = DIO_SPEED_FREQ_LOW,
+        .output_type = DIO_OUTPUT_PUSHPULL,
+    }
+};
+
+static struct dio_cfg dio_cfg = {
+    .num_inputs = ARRAY_SIZE(d_inputs),
+    .inputs = d_inputs,
+    .num_outputs = ARRAY_SIZE(d_outputs),
+    .outputs = d_outputs,
+};
+
 void uart_clear_and_home(USART_TypeDef *USARTx){
     const char *ansi_cls = "\033[2J\033[H";
     while (*ansi_cls) {
@@ -70,6 +105,10 @@ void app_main(void){
     int32_t result;
     struct console_cfg console_cfg;
     struct ttys_cfg ttys_cfg;
+
+    struct blinky_cfg blinky_cfg = {
+        .dout_idx = DOUT_LED_2
+    };
 
     // uart_clear_and_home(USART2);
 
@@ -121,6 +160,12 @@ void app_main(void){
         if (result < 0){
             INC_SAT_U16(cnts_u16[CNT_INIT_ERR]);
         }
+    }
+
+    result = dio_init(NULL);
+    if (result < 0){
+        log_error("tmr init error %d\n", result);
+        INC_SAT_U16(cnts_u16[CNT_INIT_ERR]);
     }
 
     // STARTING MODULES

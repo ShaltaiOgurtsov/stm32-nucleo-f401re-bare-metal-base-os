@@ -60,7 +60,7 @@ int32_t dio_init(struct dio_cfg* _cfg){
         dii = &cfg->inputs[idx];
         LL_GPIO_SetPinPull(dii->port, dii->pin, LL_GPIO_MODE_INPUT);
     }
-    for (idx = 0; idx < cfg->num_inputs; idx++){
+    for (idx = 0; idx < cfg->num_outputs; idx++){
         doi = &cfg->outputs[idx];
         LL_GPIO_SetPinSpeed(doi->port, doi->pin, doi->speed);
         LL_GPIO_SetPinOutputType(doi->port, doi->pin,  doi->output_type);
@@ -86,7 +86,7 @@ int32_t dio_start(void){
 
 int32_t dio_get(uint32_t din_idx)   
 {
-    if (dio_idx >= cfg->num_inputs){
+    if (din_idx >= cfg->num_inputs){
         return MOD_ERR_ARG;
     }
 
@@ -136,13 +136,19 @@ int32_t dio_get_num_out(void)
 }
 
 
-cmd_dio_status(int32_t argc, const char** argv){
+static int32_t cmd_dio_status(int32_t argc, const char** argv)
+{
     uint32_t idx;
-
+    
     printf("Inputs:\n");
-    for(idx = 0; idx < cfg->num_inputs; idx++){
-        printf("    %2lu: %s = %ld\n", idx, cfg->outputs[idx].name, dio_get_out(idx));
-    }
+    for (idx = 0; idx < cfg->num_inputs; idx++)
+        printf("  %2lu: %s = %ld\n", idx, cfg->inputs[idx].name, dio_get(idx));
+    
+
+    printf("Outputs:\n");
+    for (idx = 0; idx < cfg->num_outputs; idx++)
+        printf("  %2lu: %s = %ld\n", idx, cfg->outputs[idx].name,
+               dio_get_out(idx));
 
     return 0;
 }

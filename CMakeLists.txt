@@ -50,6 +50,8 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     Core/Src/console.c
     Core/Src/ttys.c
     Core/Src/log.c
+    Core/Src/blinky.c
+    Core/Src/log.c
 )
 
 # Add include paths
